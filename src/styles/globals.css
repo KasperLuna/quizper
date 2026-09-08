@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "SF Pro Display", Inter, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-accent: #0071e3;
+  --color-ground: #f5f5f7;
+  --color-card-dark: #1c1c1e;
+  --color-success: #34c759;
+  --color-error: #ff3b30;
+}
+
+body {
+  @apply bg-ground text-neutral-900 antialiased dark:bg-black dark:text-neutral-100;
+}
