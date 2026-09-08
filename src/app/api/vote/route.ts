@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { eloDelta } from "~/lib/quiz";
-import { seedRatingsIfEmpty } from "~/server/quiz-store";
+import { pickMatchup, seedRatingsIfEmpty } from "~/server/quiz-store";
 import { db } from "~/server/db";
 import { candidateRatings, pairwiseVotes } from "~/server/db/schema";
 
@@ -66,5 +66,11 @@ export async function POST(request: Request) {
     winner: { name: winnerName, elo: updatedWinner.elo, votes: updatedWinner.votes },
     loser: { name: loserName, elo: updatedLoser.elo, votes: updatedLoser.votes },
     delta,
+    // Piggyback the next pair: one round trip per vote instead of two.
+    next: pickMatchup([
+      ...rows.filter((r) => r.name !== winnerName && r.name !== loserName),
+      updatedWinner,
+      updatedLoser,
+    ]),
   });
 }

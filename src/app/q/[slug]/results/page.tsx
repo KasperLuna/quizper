@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import type { Answer, Quiz } from "~/lib/quiz";
 import { decodeShare } from "~/lib/share";
 import { Card, ScoreNumeral } from "~/components/ui";
+import Leaderboard from "~/components/leaderboard";
 import sample from "~/../fixtures/quiz.sample.json";
 
 function ResultsBody() {
@@ -123,18 +124,17 @@ function ResultsBody() {
         })}
       </ol>
 
+      <div className="flex flex-col gap-3 pt-2">
+        <h2 className="text-[20px] font-bold tracking-tight">Leaderboard</h2>
+        <Leaderboard slug={quiz.slug} />
+      </div>
+
       <div className="flex gap-5 pb-8 text-[17px]">
         <Link
           href={`/q/${quiz.slug}`}
           className="text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           Retake
-        </Link>
-        <Link
-          href={`/q/${quiz.slug}/leaderboard`}
-          className="text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          Leaderboard
         </Link>
         <Link
           href="/"
