@@ -28,8 +28,13 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
         next.push({ questionId: question.id, choice });
         return next;
       });
-      // honey: fire-and-forget; vote loss on offline/flake acceptable v1, Elo converges
-      if (question.type === "pairwise" && question.options.length >= 2) {
+      // honey: fire-and-forget; vote loss on offline/flake acceptable v1, Elo converges.
+      // Only 2-option duels record Elo; N-way picks are share-payload only.
+      if (
+        question.type === "pairwise" &&
+        question.options.length === 2 &&
+        choice < 2
+      ) {
         const winner = question.options[choice];
         const loser = question.options[choice === 0 ? 1 : 0];
         void fetch("/api/vote", {
@@ -129,7 +134,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   }, [index, total, question]);
 
   if (!question) return null;
-  const isPairwise = question.type === "pairwise";
+  const isDuel = question.type === "pairwise" && question.options.length === 2;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -146,7 +151,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
           {announcement}
         </div>
 
-        {isPairwise ? (
+        {isDuel ? (
           <div
             role="group"
             aria-label="Pick one"

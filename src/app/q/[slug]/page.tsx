@@ -25,10 +25,14 @@ export default async function QuizPage({
   const { slug } = await params;
   const quiz = await getQuiz(slug);
   if (!quiz) notFound();
-  // Versus is a quiz type, not a mode: all-pairwise quizzes are endless
-  // head-to-head voting, everything else is the one-pass quiz runner.
-  if (quiz.questions.length > 0 && quiz.questions.every((q) => q.type === "pairwise")) {
-    return <VersusRunner slug={quiz.slug} title={quiz.title} />;
+  // Versus is a quiz type: exactly one pairwise question holding the whole
+  // candidate pool. Everything else is the one-pass quiz runner.
+  const versus =
+    quiz.questions.length === 1 && quiz.questions[0]?.type === "pairwise"
+      ? quiz.questions[0]
+      : undefined;
+  if (versus) {
+    return <VersusRunner slug={quiz.slug} title={quiz.title} prompt={versus.prompt} />;
   }
   return <QuizRunner quiz={quiz} />;
 }
