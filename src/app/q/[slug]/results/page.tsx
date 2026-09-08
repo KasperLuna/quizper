@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import type { Answer, Quiz } from "~/lib/quiz";
-import { decodeShare } from "~/components/quiz-runner";
+import { decodeShare } from "~/lib/share";
 import { Card, ScoreNumeral } from "~/components/ui";
 import sample from "~/../fixtures/quiz.sample.json";
 
@@ -19,11 +19,7 @@ function ResultsBody() {
   const answers: Answer[] = useMemo(() => {
     const s = search.get("s");
     if (!s) return [];
-    try {
-      return decodeShare(s);
-    } catch {
-      return [];
-    }
+    return decodeShare(s)?.answers ?? [];
   }, [search]);
 
   useEffect(() => {

@@ -6,44 +6,67 @@ import { useParams } from "next/navigation";
 import type { MemberScore } from "~/lib/quiz";
 import { Card } from "~/components/ui";
 
-function Histogram({ entries }: { entries: MemberScore[] }) {
-  const max = useMemo(
-    () => Math.max(1, ...entries.map((e) => e.votes)),
-    [entries],
-  );
+function Histogram({
+  buckets,
+  entries,
+}: {
+  buckets: { label: string; count: number }[];
+  entries: MemberScore[];
+}) {
+  const bars =
+    buckets.length > 0
+      ? buckets.map((b) => ({ key: b.label, title: `${b.label}: ${b.count}`, value: b.count }))
+      : entries.map((e) => ({
+          key: e.name,
+          title: `${e.name}: ${e.votes} votes, Elo ${e.elo}`,
+          value: e.votes,
+        }));
+  const max = Math.max(1, ...bars.map((b) => b.value));
   return (
     <div
       role="img"
-      aria-label={`Vote distribution across ${entries.length} candidates`}
+      aria-label={`Elo distribution across ${bars.length} buckets`}
       className="flex h-24 items-end gap-1.5"
     >
-      {entries.map((e) => (
+      {bars.map((b) => (
         <div
-          key={e.name}
-          title={`${e.name}: ${e.votes} votes, Elo ${e.elo}`}
+          key={b.key}
+          title={b.title}
           className="flex-1 rounded-sm bg-neutral-400 dark:bg-neutral-500"
-          style={{ height: `${Math.max(4, (e.votes / max) * 100)}%` }}
+          style={{ height: `${Math.max(4, (b.value / max) * 100)}%` }}
         />
       ))}
     </div>
   );
 }
 
+interface LeaderboardPayload {
+  ratings?: MemberScore[];
+  buckets?: { label: string; count: number }[];
+  entries?: MemberScore[];
+}
+
 export default function LeaderboardPage() {
   const params = useParams<{ slug: string }>();
   const [entries, setEntries] = useState<MemberScore[] | null>(null);
+  const [buckets, setBuckets] = useState<{ label: string; count: number }[]>([]);
 
   useEffect(() => {
     let alive = true;
     const load = async () => {
       try {
-        const res = await fetch(`/api/leaderboard?slug=${params.slug}`);
+        const res = await fetch(
+          `/api/leaderboard?quiz=${params.slug}&mode=elo`,
+        );
         if (!res.ok) throw new Error("no api");
-        const data: unknown = await res.json();
+        const data = (await res.json()) as LeaderboardPayload;
         const list = Array.isArray(data)
-          ? (data as MemberScore[])
-          : ((data as { entries?: MemberScore[] }).entries ?? []);
-        if (alive) setEntries(list);
+          ? (data as unknown as MemberScore[])
+          : (data.ratings ?? data.entries ?? []);
+        if (alive) {
+          setEntries(list);
+          setBuckets(data.buckets ?? []);
+        }
       } catch {
         if (alive) setEntries([]);
       }
@@ -87,7 +110,7 @@ export default function LeaderboardPage() {
       ) : (
         <>
           <Card className="p-5">
-            <Histogram entries={sorted} />
+            <Histogram buckets={buckets} entries={sorted} />
           </Card>
           <ol className="flex flex-col gap-2" aria-label="Rankings">
             {sorted.map((e, i) => (

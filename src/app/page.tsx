@@ -3,19 +3,14 @@ import type { Quiz } from "~/lib/quiz";
 import { Card } from "~/components/ui";
 import sample from "~/../fixtures/quiz.sample.json";
 
+export const revalidate = 3600;
+
 async function getQuizzes(): Promise<Quiz[]> {
-  // Tracks A/B APIs may not exist yet — try, fall back to fixture standalone.
+  // Track A loader when env is present; fixture fallback keeps pages standalone.
   try {
-    const base =
-      process.env.NEXT_PUBLIC_BASE_URL ??
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
-    if (base) {
-      const res = await fetch(`${base}/api/quizzes`, { next: { revalidate: 60 } });
-      if (res.ok) {
-        const data: unknown = await res.json();
-        if (Array.isArray(data) && data.length > 0) return data as Quiz[];
-      }
-    }
+    const { fetchQuizzes } = await import("~/lib/contentful");
+    const quizzes = await fetchQuizzes();
+    if (quizzes.length > 0) return quizzes;
   } catch {
     // fall through to fixture
   }

@@ -25,3 +25,17 @@
 - **Leaderboard**: `?mode=elo` → ratings desc; `?mode=score` → top 50
   attempts desc. `buildBuckets` ported verbatim from vert-measure
   (8 buckets, size rounded to 50); Track C owns monochrome styling.
+
+## Track C (UI) — 2026-09-08
+
+- Standalone-first, CMS-second: server pages call Track A
+  (`fetchQuizzes`/`getQuizBySlug`, dynamic import so no static dep) with
+  fixture fallback, so routes render with zero backend. `revalidate = 3600`
+  per Track A note.
+- Single share codec: `src/lib/share.ts` (Track B `{answers, score}`,
+  zod-validated, null on malformed). Runner encodes it; results decodes it
+  client-side in `Suspense` and recomputes the score from quiz content.
+- Keyboard: `1-4`/`A-D` answer, arrows move focus, `Enter` confirms.
+  Auto-advance 180ms (0 under reduced-motion); polite live region announces
+  each question. Accent only on interactive + progress + numeral;
+  leaderboard histogram renders Track B `buckets` as monochrome bars.

@@ -3,20 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Answer, Quiz } from "~/lib/quiz";
+import { encodeShare } from "~/lib/share";
 import { AnswerRow, ProgressBar } from "~/components/ui";
-
-export function encodeShare(answers: Answer[]): string {
-  const json = JSON.stringify(answers);
-  const b64 =
-    typeof window !== "undefined"
-      ? window.btoa(
-          encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, h: string) =>
-            String.fromCharCode(parseInt(h, 16)),
-          ),
-        )
-      : Buffer.from(json, "utf8").toString("base64");
-  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -90,10 +78,22 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   useEffect(() => setFocus(0), [index]);
 
   const finish = useCallback(() => {
-    const ordered: Answer[] = quiz.questions
-      .map((q) => answers.find((a) => a.questionId === q.id))
-      .filter((a): a is Answer => Boolean(a));
-    router.push(`/q/${quiz.slug}/results?s=${encodeShare(ordered)}`);
+    const ordered = quiz.questions.flatMap((q) => {
+      const a = answers.find((x) => x.questionId === q.id);
+      return a ? [a] : [];
+    });
+    const scorable = quiz.questions.filter(
+      (q) => q.correctIndex !== undefined,
+    );
+    const correct = scorable.filter((q) => {
+      const a = answers.find((x) => x.questionId === q.id);
+      return a !== undefined && a.choice === q.correctIndex;
+    }).length;
+    const score =
+      scorable.length > 0
+        ? Math.round((correct / scorable.length) * 100)
+        : 0;
+    router.push(`/q/${quiz.slug}/results?s=${encodeShare({ answers: ordered, score })}`);
   }, [answers, quiz, router]);
 
   const announcement = useMemo(() => {
@@ -204,21 +204,5 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
         </div>
       ) : null}
     </div>
-  );
-}
-
-export function decodeShare(payload: string): Answer[] {
-  const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-  const bin = window.atob(b64);
-  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-  const json = new TextDecoder().decode(bytes);
-  const parsed: unknown = JSON.parse(json);
-  if (!Array.isArray(parsed)) return [];
-  return parsed.filter(
-    (a): a is Answer =>
-      typeof a === "object" &&
-      a !== null &&
-      typeof (a as Answer).questionId === "string" &&
-      typeof (a as Answer).choice === "number",
   );
 }
