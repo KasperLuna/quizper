@@ -3,6 +3,10 @@ import type { Quiz } from "~/lib/quiz";
 import { Card } from "~/components/ui";
 import sample from "~/../fixtures/quiz.sample.json";
 
+// Time-based backstop; Contentful publish webhooks hit /api/revalidate
+// for instant invalidation.
+export const revalidate = 3600;
+
 export const revalidate = 3600;
 
 async function getQuizzes(): Promise<Quiz[]> {
