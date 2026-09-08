@@ -1,66 +1,17 @@
-import { promises as fs } from "fs";
 import { NextResponse } from "next/server";
-import path from "path";
-import { z } from "zod";
+import { eq } from "drizzle-orm";
 
 import type { Matchup, Quiz } from "~/lib/quiz";
 import { START_ELO } from "~/lib/quiz";
+import { getQuizWithFallback } from "~/lib/quiz-fallback";
 import { db } from "~/server/db";
 import { candidateRatings } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
 
 /**
- * Quiz loader (Track B local copy). Prefers a per-slug fallback fixture
- * (fixtures/quiz.<slug>.json, then fixtures/quiz.sample.json when the slug
- * matches), else defers to Track A's contentful lib once it lands.
- * Track A: replace the dynamic import below with a static getQuiz import.
+ * Quiz loading: Contentful first, sample fixture on any failure
+ * (Track A's getQuizWithFallback). Re-exported for the attempts route.
  */
-const quizSchema: z.ZodType<Quiz> = z.object({
-  title: z.string(),
-  slug: z.string(),
-  description: z.string(),
-  theme: z.string().optional(),
-  questions: z.array(
-    z.object({
-      id: z.string(),
-      type: z.enum(["pairwise", "mcq", "boolean"]),
-      prompt: z.string(),
-      options: z.array(z.string()),
-      correctIndex: z.number().int().optional(),
-      explanation: z.string().optional(),
-      mediaUrl: z.string().optional(),
-    }),
-  ),
-});
-
-export async function loadQuizBySlug(slug: string): Promise<Quiz | null> {
-  for (const file of [`quiz.${slug}.json`, "quiz.sample.json"]) {
-    try {
-      const raw = await fs.readFile(
-        path.join(process.cwd(), "fixtures", file),
-        "utf-8",
-      );
-      const parsed = quizSchema.safeParse(JSON.parse(raw));
-      if (parsed.success && parsed.data.slug === slug) return parsed.data;
-    } catch {
-      // missing/unparseable fixture — fall through
-    }
-  }
-  try {
-    // Non-literal specifier: no static dependency on Track A's file yet.
-    const specifier = "~/lib/contentful";
-    const mod = (await import(specifier)) as {
-      getQuiz?: (slug: string) => Promise<unknown>;
-    };
-    if (typeof mod.getQuiz === "function") {
-      const parsed = quizSchema.safeParse(await mod.getQuiz(slug));
-      return parsed.success ? parsed.data : null;
-    }
-  } catch {
-    // contentful lib not landed yet
-  }
-  return null;
-}
+export const loadQuizBySlug = getQuizWithFallback;
 
 /** Distinct pairwise candidate names for a quiz (seed source). */
 export function pairwiseCandidates(quiz: Quiz): string[] {
