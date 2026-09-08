@@ -10,6 +10,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     CONTENTFUL_SPACE_ID: z.string().min(1),
     CONTENTFUL_ACCESS_TOKEN: z.string().min(1),
+    REVALIDATE_SECRET: z.string().min(16).optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -32,6 +33,7 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     CONTENTFUL_SPACE_ID: process.env.CONTENTFUL_SPACE_ID,
     CONTENTFUL_ACCESS_TOKEN: process.env.CONTENTFUL_ACCESS_TOKEN,
+    REVALIDATE_SECRET: process.env.REVALIDATE_SECRET,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_SITE_TITLE: process.env.NEXT_PUBLIC_SITE_TITLE,
   },
