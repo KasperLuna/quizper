@@ -1,10 +1,27 @@
 # Decisions
 
-## Track C (UI) — 2026-09-08
+## Track B — quiz engine (2026-09-08)
 
-- Standalone-first data: server pages try `/api/quizzes[/slug]` (Track A/B may not exist) and fall back to `fixtures/quiz.sample.json`, so all routes render with zero backend.
-- Share codec lives in `quiz-runner.tsx` (`encodeShare`/`decodeShare`, base64url of `Answer[]`); `quiz.ts` is frozen and untouched. Results page decodes `?s=` client-side inside `Suspense` (required for `useSearchParams`).
-- Keyboard: `1-4`/`A-D` answer directly, arrows move focus, `Enter` confirms. Auto-advance 180ms after select (0 when `prefers-reduced-motion`); transitions use `motion-reduce:transition-none`. Question changes announced via polite live region.
-- Accent discipline: `accent #0071E3` only on interactive elements, progress fill, score numeral. Leaderboard histogram is monochrome neutral bars.
-- Polling: leaderboard refetches `/api/leaderboard?slug=` every 3s; fetch failure resolves to the empty state ("No votes yet"), never an error wall.
-- Primitives (`Card`, `AnswerRow`, `ProgressBar`, `ScoreNumeral`) in `src/components/ui.tsx` encode DESIGN.md tokens (rounded-2xl, hairline borders, 56px rows, 2px bar, 64pt numeral, system colors).
+- **No `db.transaction` on Neon HTTP**: the neon-http driver throws
+  ("No transactions support in neon-http driver"). Vote writes (2 rating
+  updates + 1 vote row) go out as one `db.batch()` — a single HTTP round
+  trip, applied together. Read-modify-write races across serverless
+  instances remain possible; accepted at v1 scale. Revisit with
+  `@neondatabase/serverless` websocket driver or `sql.transaction()` if
+  vote contention becomes real.
+- **Quiz loading without Track A**: `src/lib/contentful.ts` doesn't exist
+  yet, so `loadQuizBySlug` (in `src/app/api/matchup/route.ts`, imported by
+  attempts) reads `fixtures/quiz.<slug>.json` → `fixtures/quiz.sample.json`
+  (slug must match), then dynamic-imports `~/lib/contentful` via a
+  non-literal specifier (no static dep, tsc-safe) expecting `getQuiz(slug)`.
+  Track A: replace with a static import once the content loader lands.
+- **Seeding**: ratings seeded from distinct pairwise `options` across all
+  pairwise questions at `START_ELO`/0 votes on first matchup hit.
+- **Scoring**: server-side only; pairwise excluded, unknown questionIds
+  ignored, no scorable questions → score 0. Client score in share URLs is
+  never trusted (see `src/lib/share.ts`).
+- **Share codec**: base64url(JSON) `{answers, score}`, zod-validated on
+  decode, null on any malformed input, 8KB cap. Edge-safe (no Buffer).
+- **Leaderboard**: `?mode=elo` → ratings desc; `?mode=score` → top 50
+  attempts desc. `buildBuckets` ported verbatim from vert-measure
+  (8 buckets, size rounded to 50); Track C owns monochrome styling.
