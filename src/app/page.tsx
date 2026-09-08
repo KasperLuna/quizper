@@ -7,8 +7,6 @@ import sample from "~/../fixtures/quiz.sample.json";
 // for instant invalidation.
 export const revalidate = 3600;
 
-export const revalidate = 3600;
-
 async function getQuizzes(): Promise<Quiz[]> {
   // Track A loader when env is present; fixture fallback keeps pages standalone.
   try {
