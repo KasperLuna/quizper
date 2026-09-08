@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { eloDelta } from "~/lib/quiz";
+import { seedRatingsIfEmpty } from "~/server/quiz-store";
 import { db } from "~/server/db";
 import { candidateRatings, pairwiseVotes } from "~/server/db/schema";
 
@@ -19,10 +20,14 @@ export async function POST(request: Request) {
   }
   const { quizSlug, winner: winnerName, loser: loserName } = parsed.data;
 
-  const rows = await db
-    .select()
-    .from(candidateRatings)
-    .where(eq(candidateRatings.quizSlug, quizSlug));
+  // The runner votes by name without ever hitting /api/matchup, so seed
+  // here too — otherwise every first vote 404s on an empty ratings table.
+  const seeded = await seedRatingsIfEmpty(quizSlug);
+  if (seeded === null) {
+    return NextResponse.json({ error: "unknown quiz" }, { status: 404 });
+  }
+
+  const rows = seeded;
   const winner = rows.find((r) => r.name === winnerName);
   const loser = rows.find((r) => r.name === loserName);
   if (!winner || !loser) {

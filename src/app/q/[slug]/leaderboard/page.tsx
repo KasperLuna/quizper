@@ -40,16 +40,23 @@ function Histogram({
   );
 }
 
+interface ScoreEntry {
+  name: string;
+  score: number;
+}
+
 interface LeaderboardPayload {
   ratings?: MemberScore[];
   buckets?: { label: string; count: number }[];
   entries?: MemberScore[];
+  attempts?: { displayName: string | null; score: number }[];
 }
 
 export default function LeaderboardPage() {
   const params = useParams<{ slug: string }>();
   const [entries, setEntries] = useState<MemberScore[] | null>(null);
   const [buckets, setBuckets] = useState<{ label: string; count: number }[]>([]);
+  const [scores, setScores] = useState<ScoreEntry[] | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -66,6 +73,25 @@ export default function LeaderboardPage() {
         if (alive) {
           setEntries(list);
           setBuckets(data.buckets ?? []);
+          // No Elo ratings yet (e.g. MCQ-only quiz): fall back to best scores.
+          if (list.length === 0) {
+            const sres = await fetch(
+              `/api/leaderboard?quiz=${params.slug}&mode=score`,
+            );
+            if (sres.ok) {
+              const sdata = (await sres.json()) as LeaderboardPayload;
+              setScores(
+                (sdata.attempts ?? []).map((a) => ({
+                  name: a.displayName ?? "Anonymous",
+                  score: a.score,
+                })),
+              );
+            } else if (alive) {
+              setScores([]);
+            }
+          } else if (alive) {
+            setScores(null);
+          }
         }
       } catch {
         if (alive) setEntries([]);
@@ -94,7 +120,7 @@ export default function LeaderboardPage() {
         <p className="text-[17px] text-neutral-500 dark:text-neutral-400">
           Loading…
         </p>
-      ) : sorted.length === 0 ? (
+      ) : sorted.length === 0 && (scores === null || scores.length === 0) ? (
         <Card className="flex flex-col gap-2 p-6">
           <p className="text-[20px] font-semibold">No votes yet</p>
           <p className="text-[17px] text-neutral-500 dark:text-neutral-400">
@@ -107,7 +133,7 @@ export default function LeaderboardPage() {
             Take the quiz
           </Link>
         </Card>
-      ) : (
+      ) : sorted.length > 0 ? (
         <>
           <Card className="p-5">
             <Histogram buckets={buckets} entries={sorted} />
@@ -131,6 +157,25 @@ export default function LeaderboardPage() {
             ))}
           </ol>
         </>
+      ) : (
+        <ol className="flex flex-col gap-2" aria-label="Best scores">
+          {(scores ?? []).map((e, i) => (
+            <li key={`${e.name}-${i}`}>
+              <Card className="flex items-center gap-3 px-5 py-3.5">
+                <span
+                  aria-hidden="true"
+                  className="w-6 shrink-0 text-[15px] font-semibold text-neutral-500 tabular-nums dark:text-neutral-400"
+                >
+                  {i + 1}
+                </span>
+                <span className="flex-1 text-[17px] font-medium">{e.name}</span>
+                <span className="text-[13px] text-neutral-500 tabular-nums dark:text-neutral-400">
+                  {e.score}%
+                </span>
+              </Card>
+            </li>
+          ))}
+        </ol>
       )}
 
       <Link
