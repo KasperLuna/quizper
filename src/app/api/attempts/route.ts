@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { db } from "~/server/db";
 import { quizAttempts } from "~/server/db/schema";
-import { loadQuizBySlug } from "../matchup/route";
+import { loadQuizBySlug } from "~/server/quiz-store";
 
 const attemptSchema = z.object({
   quizSlug: z.string().min(1).max(128),
