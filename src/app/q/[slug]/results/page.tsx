@@ -24,10 +24,12 @@ function ResultsBody() {
 
   useEffect(() => {
     if (quiz || !params.slug) return;
-    fetch(`/api/quizzes/${params.slug}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((q) => q && setQuiz(q as Quiz))
-      .catch(() => {});
+    void fetch(`/api/quizzes/${params.slug}`)
+      .then((r) => (r.ok ? (r.json() as Promise<unknown>) : null))
+      .then((q: unknown) => {
+        if (q) setQuiz(q as Quiz);
+      })
+      .catch(() => undefined);
   }, [quiz, params.slug]);
 
   const scorable = useMemo(

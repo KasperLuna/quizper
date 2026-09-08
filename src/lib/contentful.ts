@@ -59,24 +59,24 @@ function entryFields(item: unknown): (RawFields & { __id: string }) | null {
   if (typeof item !== "object" || item === null || !("fields" in item))
     return null;
   const entry = item as Entry;
-  if (!entry.sys || entry.sys.type !== "Entry") return null; // unresolved Link
+  if (entry.sys?.type !== "Entry") return null; // unresolved Link
   return { ...(entry.fields as RawFields), __id: entry.sys.id };
 }
 
 function parseQuestion(item: unknown): Question | null {
   const f = entryFields(item);
-  if (!f || !isQuestionType(f["type"])) return null;
-  const type = f["type"];
-  const prompt = str(f["prompt"]);
-  const options = Array.isArray(f["options"])
-    ? f["options"].filter((o): o is string => typeof o === "string")
+  if (!f || !isQuestionType(f.type)) return null;
+  const type = f.type;
+  const prompt = str(f.prompt);
+  const options = Array.isArray(f.options)
+    ? f.options.filter((o): o is string => typeof o === "string")
     : [];
   if (!prompt || options.length < 2) return null;
   if (type === "pairwise" && options.length !== 2) return null;
 
   const q: Question = { id: f.__id, type, prompt, options };
   if (type !== "pairwise") {
-    const ci = f["correctIndex"];
+    const ci = f.correctIndex;
     if (
       typeof ci !== "number" ||
       !Number.isInteger(ci) ||
@@ -86,9 +86,9 @@ function parseQuestion(item: unknown): Question | null {
       return null;
     q.correctIndex = ci;
   }
-  const explanation = str(f["explanation"]);
+  const explanation = str(f.explanation);
   if (explanation) q.explanation = explanation;
-  const media = mediaUrl(f["media"]);
+  const media = mediaUrl(f.media);
   if (media) q.mediaUrl = media;
   return q;
 }
@@ -96,17 +96,17 @@ function parseQuestion(item: unknown): Question | null {
 function parseQuiz(item: unknown): Quiz | null {
   const f = entryFields(item);
   if (!f) return null;
-  const title = str(f["title"]);
-  const slug = str(f["slug"]);
-  const description = str(f["description"]);
+  const title = str(f.title);
+  const slug = str(f.slug);
+  const description = str(f.description);
   if (!title || !slug || !description) return null;
-  const questions = Array.isArray(f["questions"])
-    ? f["questions"]
+  const questions = Array.isArray(f.questions)
+    ? f.questions
         .map(parseQuestion)
         .filter((q): q is Question => q !== null)
     : [];
   const quiz: Quiz = { title, slug, description, questions };
-  const theme = str(f["theme"]);
+  const theme = str(f.theme);
   if (theme) quiz.theme = theme;
   return quiz;
 }
@@ -128,6 +128,6 @@ export async function getQuizBySlug(slug: string): Promise<Quiz | null> {
   const item = res.items[0];
   if (!item) return null;
   const quiz = parseQuiz(item);
-  if (!quiz || quiz.slug !== slug) return null;
+  if (quiz?.slug !== slug) return null;
   return quiz;
 }
