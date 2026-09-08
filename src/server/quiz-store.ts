@@ -11,10 +11,14 @@ export const loadQuizBySlug = getQuizWithFallback;
 
 /** Distinct pairwise candidate names for a quiz (seed source). */
 export function pairwiseCandidates(quiz: Quiz): string[] {
-  const names = quiz.questions
-    .filter((q) => q.type === "pairwise")
-    .flatMap((q) => q.options);
-  return [...new Set(names.map((n) => n.trim()).filter(Boolean))];
+  const qs = quiz.questions.filter((q) => q.type === "pairwise");
+  // Versus = one pairwise question holding the whole pool. Multi-question
+  // quizzes fall back to pooling their 2-option duels (runner votes).
+  const pool =
+    qs.length === 1
+      ? (qs[0]?.options ?? [])
+      : qs.filter((q) => q.options.length === 2).flatMap((q) => q.options);
+  return [...new Set(pool.map((n) => n.trim()).filter(Boolean))];
 }
 
 export async function seedRatingsIfEmpty(

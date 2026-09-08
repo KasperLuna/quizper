@@ -15,9 +15,11 @@ interface VoteResponse {
 export default function VersusRunner({
   slug,
   title,
+  prompt,
 }: {
   slug: string;
   title: string;
+  prompt: string;
 }) {
   const [matchup, setMatchup] = useState<Matchup | null>(null);
   const [voting, setVoting] = useState(false);
@@ -66,10 +68,10 @@ export default function VersusRunner({
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8 px-5 py-10">
         <div className="text-center">
           <h1 className="text-[28px] leading-tight font-bold tracking-tight">
-            {title}
+            {prompt}
           </h1>
           <p className="mt-1 text-[17px] text-neutral-500 dark:text-neutral-400">
-            Pick one — ratings update live.
+            {title} · ratings update live
           </p>
         </div>
 

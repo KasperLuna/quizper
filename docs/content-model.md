@@ -24,15 +24,25 @@ so linked questions resolve in one request. Server-component callers set
 | -------------- | --------------- | -------- | ------------------------------------------------------------ |
 | `type`         | Short text      | yes      | Exactly `pairwise`, `mcq`, or `boolean`. Validate via list.  |
 | `prompt`       | Short text      | yes      | The question headline.                                       |
-| `options`      | Short text, list| yes      | `mcq`: 2+ answers. `boolean`: `True`,`False`. `pairwise`: exactly 2 candidate names. |
+| `options`      | Short text, list| yes      | `mcq`: 2+ answers. `boolean`: `True`,`False`. `pairwise`: 2 = single duel (runner), 3+ = versus pool (see below). |
 | `correctIndex` | Integer         | mcq/boolean only | Index into `options`. Omit for `pairwise`.          |
 | `explanation`  | Long text       | no       | Shown on results.                                            |
 | `media`        | Media, one file | no       | Optional image. Asset URL used as `mediaUrl`.                |
 
 Parser rules (`src/lib/contentful.ts`): entries missing required fields are
 skipped, not fatal. Invalid `correctIndex` (non-integer, out of range)
-drops that question. `pairwise` with != 2 options is dropped.
+drops that question. `pairwise` needs 2+ options.
 Unresolved links (no `include`) are skipped.
+
+## Versus quizzes (Elo)
+
+A versus quiz is **exactly one `pairwise` question holding the whole
+candidate pool** (3+ options) — never several 2-option questions. The
+question prompt becomes the heading ("Which one rules them all?"), every
+pairing draws from the pool, and the leaderboard ranks all candidates
+against each other. Multi-question quizzes with 2-option pairwise
+questions stay runner duels (Elo recorded per duel); N-way pairwise in a
+runner is share-payload only, no Elo.
 
 ## Authoring steps
 

@@ -72,7 +72,8 @@ function parseQuestion(item: unknown): Question | null {
     ? f.options.filter((o): o is string => typeof o === "string")
     : [];
   if (!prompt || options.length < 2) return null;
-  if (type === "pairwise" && options.length !== 2) return null;
+  // Versus quizzes hold the whole pool in one pairwise question (3+ options);
+  // 2-option pairwise is a single duel for the runner.
 
   const q: Question = { id: f.__id, type, prompt, options };
   if (type !== "pairwise") {
