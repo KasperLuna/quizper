@@ -1,6 +1,9 @@
-# Content Model (new-space setup)
+# Content Model (shared portfolio space)
 
-Content types: `quiz` → references `question[]`. Fetch with `include: 2`
+Reuse the personal-portfolio Contentful space — add `quiz` / `question`
+content types alongside `portfolioProject`, `portfolioSkill`, `event`
+(no ID clashes). Same `CONTENTFUL_SPACE_ID` + `CONTENTFUL_ACCESS_TOKEN`
+as the portfolio; copy them from its `.env.local`. Fetch with `include: 2`
 so linked questions resolve in one request. Server-component callers set
 `export const revalidate = 3600;`.
 
@@ -33,7 +36,7 @@ Unresolved links (no `include`) are skipped.
 
 ## Authoring steps
 
-1. Create content types `quiz` and `question` with the fields above.
+1. In the portfolio space, create content types `quiz` and `question` with the fields above.
 2. Add `question` entries first (prompt, type, options, correct answer).
 3. Add a `quiz` entry; link its `questions` in display order.
 4. Publish quiz + all linked questions (unpublished links resolve empty).
