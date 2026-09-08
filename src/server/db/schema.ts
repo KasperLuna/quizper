@@ -1,4 +1,4 @@
-import { index, pgTableCreator } from "drizzle-orm/pg-core";
+import { index, pgTableCreator, primaryKey } from "drizzle-orm/pg-core";
 
 /**
  * Multi-project schema prefix. All quizper tables are `quizper_*`.
@@ -18,7 +18,9 @@ export const candidateRatings = createTable(
     votes: d.integer().default(0).notNull(),
   }),
   (t) => [
-    index("candidate_rating_quiz_idx").on(t.quizSlug),
+    // Composite PK: one rating per candidate per quiz. Also enforces the
+    // uniqueness the vote path assumes, and covers quizSlug-prefix lookups.
+    primaryKey({ columns: [t.quizSlug, t.name] }),
     index("candidate_rating_elo_idx").on(t.quizSlug, t.elo),
   ],
 );
