@@ -72,7 +72,7 @@ export default function LeaderboardPage() {
       }
     };
     void load();
-    const t = window.setInterval(load, 3000);
+    const t = window.setInterval(() => void load(), 3000);
     return () => {
       alive = false;
       window.clearInterval(t);
