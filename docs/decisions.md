@@ -1,5 +1,21 @@
 # Decisions
 
+## Finish gate — 2026-09-08
+
+- **Runner submissions wired**: pairwise pick fire-and-forget POSTs
+  `/api/vote`; finish POSTs `/api/attempts` and uses the server score in the
+  share URL (client score fallback offline). Vote loss acceptable v1.
+- **No `/api/quizzes` list endpoint**: index keeps direct Track A import
+  (server component, CMS + fixture). Added only
+  `GET /api/quizzes/[slug]` for the client-side results page.
+- **Leaderboard stays Elo-default**, no mode toggle v1 (`?mode=score`
+  available via API).
+- **Verify**: detector `[]`, `pnpm check` clean, `/`, `/q/sample-quiz`,
+  `/leaderboard`, `/api/quizzes/sample-quiz` all 200 (dummy env, fixture).
+  DESIGN.md stands as built — no drift found.
+- **To run for real**: fill `.env` (Neon URL via Vercel Marketplace +
+  Contentful space keys), `pnpm db:push`, `pnpm dev`.
+
 ## Track B — quiz engine (2026-09-08)
 
 - **No `db.transaction` on Neon HTTP**: the neon-http driver throws
