@@ -178,12 +178,20 @@ export default function LeaderboardPage() {
         </ol>
       )}
 
-      <Link
-        href={`/q/${params.slug}`}
-        className="text-accent pb-8 text-[17px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
-        Back to quiz
-      </Link>
+      <div className="flex gap-6 pb-8 text-[17px]">
+        <Link
+          href={`/q/${params.slug}/versus`}
+          className="font-medium text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          Keep voting →
+        </Link>
+        <Link
+          href={`/q/${params.slug}`}
+          className="text-neutral-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent dark:text-neutral-400"
+        >
+          Back to quiz
+        </Link>
+      </div>
     </main>
   );
 }

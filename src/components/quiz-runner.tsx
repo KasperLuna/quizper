@@ -13,6 +13,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [focus, setFocus] = useState(0);
+  const [name, setName] = useState("");
 
   const question = quiz.questions[index];
   const total = quiz.questions.length;
@@ -104,18 +105,23 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
         ? Math.round((correct / scorable.length) * 100)
         : 0;
     // Server is source of truth for recorded score; share URL carries it.
+    const displayName = name.trim();
     try {
       const res = await fetch("/api/attempts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quizSlug: quiz.slug, answers: ordered }),
+        body: JSON.stringify({
+          quizSlug: quiz.slug,
+          answers: ordered,
+          ...(displayName ? { displayName } : {}),
+        }),
       });
       if (res.ok) score = ((await res.json()) as { score: number }).score;
     } catch {
       // offline: fall back to client-computed score, unrecorded
     }
     router.push(`/q/${quiz.slug}/results?s=${encodeShare({ answers: ordered, score })}`);
-  }, [answers, quiz, router]);
+  }, [answers, name, quiz, router]);
 
   const announcement = useMemo(() => {
     if (!question) return "";
@@ -181,12 +187,28 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
           </div>
         )}
 
+        {index === total - 1 ? (
+          <label className="flex flex-col gap-1.5 pt-2">
+            <span className="text-[13px] text-neutral-500 dark:text-neutral-400">
+              Your name (optional — shown on the leaderboard)
+            </span>
+            <input
+              type="text"
+              value={name}
+              maxLength={64}
+              autoComplete="nickname"
+              placeholder="e.g. Ada"
+              onChange={(e) => setName(e.target.value)}
+              className="h-14 rounded-2xl border border-black/10 bg-white px-5 text-[17px] outline-none placeholder:text-neutral-400 focus:border-accent dark:border-white/15 dark:bg-card-dark dark:placeholder:text-neutral-500"
+            />
+          </label>
+        ) : null}
+
         <div className="flex items-center justify-between pt-2">
           <button
             type="button"
             disabled={index === 0}
-            onClick={() => setIndex((i) => Math.max(0, i - 1))}
-            className="rounded-full px-4 py-2 text-[17px] text-neutral-500 disabled:opacity-40 dark:text-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            onClick={() => setIndex((i) => Math.max(0, i - 1))}            className="rounded-full px-4 py-2 text-[17px] text-neutral-500 disabled:opacity-40 dark:text-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             Back
           </button>
