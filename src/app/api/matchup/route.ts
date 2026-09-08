@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 
 import type { Matchup } from "~/lib/quiz";
 import { seedRatingsIfEmpty } from "~/server/quiz-store";
