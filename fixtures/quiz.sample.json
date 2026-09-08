@@ -1,0 +1,30 @@
+{
+  "title": "Sample Quiz",
+  "slug": "sample-quiz",
+  "description": "Fixture for Tracks A/B/C. Mirrors the Contentful quiz shape.",
+  "theme": "general",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "pairwise",
+      "prompt": "Who's more extroverted?",
+      "options": ["Ada Lovelace", "Grace Hopper"]
+    },
+    {
+      "id": "q2",
+      "type": "mcq",
+      "prompt": "Which language runs in the browser?",
+      "options": ["Python", "TypeScript", "Rust", "Go"],
+      "correctIndex": 1,
+      "explanation": "TypeScript compiles to JavaScript, the browser's native language."
+    },
+    {
+      "id": "q3",
+      "type": "boolean",
+      "prompt": "Contentful is the CMS behind quizper.",
+      "options": ["True", "False"],
+      "correctIndex": 0,
+      "explanation": "Authors edit quizzes in Contentful; the site renders them."
+    }
+  ]
+}
