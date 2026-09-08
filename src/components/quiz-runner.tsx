@@ -27,8 +27,18 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
         next.push({ questionId: question.id, choice });
         return next;
       });
+      // honey: fire-and-forget; vote loss on offline/flake acceptable v1, Elo converges
+      if (question.type === "pairwise" && question.options.length >= 2) {
+        const winner = question.options[choice];
+        const loser = question.options[choice === 0 ? 1 : 0];
+        void fetch("/api/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quizSlug: quiz.slug, winner, loser }),
+        }).catch(() => undefined);
+      }
     },
-    [question],
+    [question, quiz.slug],
   );
 
   // Advance shortly after answering so the checkmark-reveal reads.
@@ -77,7 +87,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
 
   useEffect(() => setFocus(0), [index]);
 
-  const finish = useCallback(() => {
+  const finish = useCallback(async () => {
     const ordered = quiz.questions.flatMap((q) => {
       const a = answers.find((x) => x.questionId === q.id);
       return a ? [a] : [];
@@ -89,10 +99,21 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
       const a = answers.find((x) => x.questionId === q.id);
       return a !== undefined && a.choice === q.correctIndex;
     }).length;
-    const score =
+    let score =
       scorable.length > 0
         ? Math.round((correct / scorable.length) * 100)
         : 0;
+    // Server is source of truth for recorded score; share URL carries it.
+    try {
+      const res = await fetch("/api/attempts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quizSlug: quiz.slug, answers: ordered }),
+      });
+      if (res.ok) score = ((await res.json()) as { score: number }).score;
+    } catch {
+      // offline: fall back to client-computed score, unrecorded
+    }
     router.push(`/q/${quiz.slug}/results?s=${encodeShare({ answers: ordered, score })}`);
   }, [answers, quiz, router]);
 
