@@ -41,3 +41,17 @@ Unresolved links (no `include`) are skipped.
 3. Add a `quiz` entry; link its `questions` in display order.
 4. Publish quiz + all linked questions (unpublished links resolve empty).
 5. Verify: open `/q/<slug>` — with `revalidate = 3600` edits appear within the hour.
+
+## Instant updates (webhook → ISR)
+
+Pages prerender at build and revalidate hourly. For instant publishes:
+
+1. `REVALIDATE_SECRET` is set in `.env` (local) and Vercel production env.
+   Generate a fresh one with `openssl rand -hex 32` if needed.
+2. Contentful dashboard → Settings → Webhooks → Add webhook:
+   - URL: `https://quizper.kasperluna.com/api/revalidate`
+   - Triggers: Entry → Publish + Unpublish (all content types; the route
+     revalidates `/` always and `/q/<slug>` when the payload carries one)
+   - Headers: `x-revalidate-secret: <REVALIDATE_SECRET>` (mark secret)
+3. Test: publish any quiz entry → index + quiz page update within seconds.
+   Manual equivalent: `GET /api/revalidate?secret=...&slug=...`.
