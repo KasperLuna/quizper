@@ -3,17 +3,13 @@ import type { Quiz } from "~/lib/quiz";
 import QuizRunner from "~/components/quiz-runner";
 import sample from "~/../fixtures/quiz.sample.json";
 
+export const revalidate = 3600;
+
 async function getQuiz(slug: string): Promise<Quiz | null> {
   try {
-    const base =
-      process.env.NEXT_PUBLIC_BASE_URL ??
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
-    if (base) {
-      const res = await fetch(`${base}/api/quizzes/${slug}`, {
-        next: { revalidate: 60 },
-      });
-      if (res.ok) return (await res.json()) as Quiz;
-    }
+    const { getQuizBySlug } = await import("~/lib/contentful");
+    const quiz = await getQuizBySlug(slug);
+    if (quiz) return quiz;
   } catch {
     // fall through to fixture
   }
