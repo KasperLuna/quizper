@@ -5,6 +5,9 @@ import { db } from "~/server/db";
 import { quizAttempts } from "~/server/db/schema";
 import { loadQuizBySlug } from "~/server/quiz-store";
 
+// Writes must never cache.
+export const dynamic = "force-dynamic";
+
 const attemptSchema = z.object({
   quizSlug: z.string().min(1).max(128),
   answers: z.array(

@@ -5,6 +5,9 @@ import { db } from "~/server/db";
 import { candidateRatings, quizAttempts } from "~/server/db/schema";
 import { buildBuckets } from "~/lib/buckets";
 
+// Short route cache: the client polls every 3s, most polls serve cache.
+export const revalidate = 5;
+
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const quizSlug = params.get("quiz");

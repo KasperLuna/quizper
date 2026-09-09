@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { createClient } from "contentful";
 import type { Entry } from "contentful";
 import type { Question, QuestionType, Quiz } from "./quiz";
@@ -113,22 +114,30 @@ function parseQuiz(item: unknown): Quiz | null {
 }
 
 /** All published quizzes. Skips entries that fail validation. */
-export async function fetchQuizzes(): Promise<Quiz[]> {
-  const res = await getClient().getEntries({ content_type: "quiz", include: 2 });
-  return res.items.map(parseQuiz).filter((q): q is Quiz => q !== null);
-}
+export const fetchQuizzes = unstable_cache(
+  async (): Promise<Quiz[]> => {
+    const res = await getClient().getEntries({ content_type: "quiz", include: 2 });
+    return res.items.map(parseQuiz).filter((q): q is Quiz => q !== null);
+  },
+  ["contentful-quiz-list"],
+  { revalidate: 3600, tags: ["contentful", "quiz-list"] },
+);
 
 /** Single quiz by slug. Null when missing, slug-mismatched, or invalid. */
-export async function getQuizBySlug(slug: string): Promise<Quiz | null> {
-  const res = await getClient().getEntries({
-    content_type: "quiz",
-    "fields.slug": slug,
-    limit: 1,
-    include: 2,
-  });
-  const item = res.items[0];
-  if (!item) return null;
-  const quiz = parseQuiz(item);
-  if (quiz?.slug !== slug) return null;
-  return quiz;
-}
+export const getQuizBySlug = unstable_cache(
+  async (slug: string): Promise<Quiz | null> => {
+    const res = await getClient().getEntries({
+      content_type: "quiz",
+      "fields.slug": slug,
+      limit: 1,
+      include: 2,
+    });
+    const item = res.items[0];
+    if (!item) return null;
+    const quiz = parseQuiz(item);
+    if (quiz?.slug !== slug) return null;
+    return quiz;
+  },
+  ["contentful-quiz"],
+  { revalidate: 3600, tags: ["contentful", "quiz"] },
+);
