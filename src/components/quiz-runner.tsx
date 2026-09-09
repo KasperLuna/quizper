@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Answer, Quiz } from "~/lib/quiz";
 import { encodeShare } from "~/lib/share";
@@ -14,6 +14,10 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [focus, setFocus] = useState(0);
   const [name, setName] = useState("");
+  const [finishing, setFinishing] = useState(false);
+  // Tracks the question answered most recently: auto-advance fires only for
+  // it, so Back/Skip navigation onto an answered question doesn't bounce.
+  const justAnswered = useRef<string | null>(null);
 
   const question = quiz.questions[index];
   const total = quiz.questions.length;
@@ -23,6 +27,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   const choose = useCallback(
     (choice: number) => {
       if (!question) return;
+      justAnswered.current = question.id;
       setAnswers((prev) => {
         const next = prev.filter((a) => a.questionId !== question.id);
         next.push({ questionId: question.id, choice });
@@ -48,8 +53,12 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   );
 
   // Advance shortly after answering so the checkmark-reveal reads.
+  // Only for the just-answered question: revisiting an answered one via
+  // Back/Skip must not bounce forward again.
   useEffect(() => {
     if (!currentChoice || !question) return;
+    if (justAnswered.current !== question.id) return;
+    justAnswered.current = null;
     if (index >= total - 1) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const t = window.setTimeout(
@@ -66,6 +75,9 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   useEffect(() => {
     if (!question) return;
     const onKey = (e: KeyboardEvent) => {
+      // Never hijack keystrokes typed into form fields (e.g. the name input).
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
       const n = question.options.length;
       if (e.key >= "1" && e.key <= String(Math.min(n, 9))) {
         choose(Number(e.key) - 1);
@@ -94,8 +106,8 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   useEffect(() => setFocus(0), [index]);
 
   const finish = useCallback(async () => {
-    const ordered = quiz.questions.flatMap((q) => {
-      const a = answers.find((x) => x.questionId === q.id);
+    setFinishing(true);
+    const ordered = quiz.questions.flatMap((q) => {      const a = answers.find((x) => x.questionId === q.id);
       return a ? [a] : [];
     });
     const scorable = quiz.questions.filter(
@@ -124,6 +136,8 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
       if (res.ok) score = ((await res.json()) as { score: number }).score;
     } catch {
       // offline: fall back to client-computed score, unrecorded
+    } finally {
+      setFinishing(false);
     }
     router.push(`/q/${quiz.slug}/results?s=${encodeShare({ answers: ordered, score })}`);
   }, [answers, name, quiz, router]);
@@ -229,10 +243,10 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
             <button
               type="button"
               onClick={finish}
-              disabled={answers.length === 0}
+              disabled={answers.length === 0 || finishing}
               className="rounded-full bg-accent px-6 py-2.5 text-[17px] font-semibold text-white disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              See results
+              {finishing ? "Saving…" : "See results"}
             </button>
           )}
         </div>
@@ -244,9 +258,12 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
             <button
               type="button"
               onClick={finish}
-              className="w-full rounded-2xl bg-accent py-3.5 text-[17px] font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              disabled={finishing}
+              className="w-full rounded-2xl bg-accent py-3.5 text-[17px] font-semibold text-white disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              See results ({answers.length}/{total} answered)
+              {finishing
+                ? "Saving…"
+                : `See results (${answers.length}/${total} answered)`}
             </button>
           </div>
         </div>
