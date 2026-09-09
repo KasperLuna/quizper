@@ -7,6 +7,7 @@ import type { Answer, Quiz } from "~/lib/quiz";
 import { decodeShare } from "~/lib/share";
 import { Card, ScoreNumeral } from "~/components/ui";
 import Leaderboard from "~/components/leaderboard";
+import { TestHeader } from "~/components/brand-header";
 import sample from "~/../fixtures/quiz.sample.json";
 
 function ResultsBody() {
@@ -72,6 +73,7 @@ function ResultsBody() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-6 px-5 py-10">
+      <TestHeader />
       <h1 className="text-[28px] leading-tight font-bold tracking-tight">
         {quiz.title} — results
       </h1>

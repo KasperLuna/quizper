@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Matchup } from "~/lib/quiz";
+import { TestHeader } from "~/components/brand-header";
 
 interface VoteResponse {
   next: Matchup | null;
@@ -66,6 +67,7 @@ export default function VersusRunner({
   return (
     <div className="flex min-h-dvh flex-col">
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8 px-5 py-10">
+        <TestHeader />
         <div className="text-center">
           <h1 className="text-[28px] leading-tight font-bold tracking-tight">
             {prompt}

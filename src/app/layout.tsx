@@ -5,7 +5,6 @@ import { type Metadata } from "next";
 export const metadata: Metadata = {
   title: "Quizper",
   description: "Contentful-driven quizzes with shareable results",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
 export default function RootLayout({

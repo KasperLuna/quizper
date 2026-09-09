@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Quiz } from "~/lib/quiz";
+import { BrandHeader, ByLine } from "~/components/brand-header";
 import { Card } from "~/components/ui";
 import sample from "~/../fixtures/quiz.sample.json";
 
@@ -23,9 +24,10 @@ export default async function HomePage() {
   const quizzes = await getQuizzes();
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-6 px-5 py-16">
-      <h1 className="text-[34px] leading-tight font-bold tracking-tight">
-        Quizper
-      </h1>
+      <header className="flex items-end justify-between gap-4">
+        <BrandHeader />
+        <ByLine />
+      </header>
       <ul className="flex flex-col gap-3">
         {quizzes.map((quiz) => (
           <li key={quiz.slug}>
