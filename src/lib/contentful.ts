@@ -78,15 +78,16 @@ function parseQuestion(item: unknown): Question | null {
 
   const q: Question = { id: f.__id, type, prompt, options };
   if (type !== "pairwise") {
+    // correctIndex optional: absent = opinion gauge, shown unscored.
     const ci = f.correctIndex;
     if (
-      typeof ci !== "number" ||
-      !Number.isInteger(ci) ||
-      ci < 0 ||
-      ci >= options.length
-    )
-      return null;
-    q.correctIndex = ci;
+      typeof ci === "number" &&
+      Number.isInteger(ci) &&
+      ci >= 0 &&
+      ci < options.length
+    ) {
+      q.correctIndex = ci;
+    }
   }
   const explanation = str(f.explanation);
   if (explanation) q.explanation = explanation;

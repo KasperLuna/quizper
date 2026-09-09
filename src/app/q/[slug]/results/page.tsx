@@ -109,11 +109,11 @@ function ResultsBody() {
                 <p className="text-[15px] text-neutral-500 dark:text-neutral-400">
                   {a === undefined
                     ? "Not answered"
-                    : isPairwise
+                    : isPairwise || q.correctIndex === undefined
                       ? `You picked ${q.options[a.choice] ?? "—"}`
                       : isCorrect
                         ? `Correct — ${q.options[a.choice] ?? ""}`
-                        : `You answered ${q.options[a.choice] ?? "—"}; correct: ${q.correctIndex !== undefined ? q.options[q.correctIndex] : "—"}`}
+                        : `You answered ${q.options[a.choice] ?? "—"}; correct: ${q.options[q.correctIndex] ?? "—"}`}
                 </p>
                 {q.explanation ? (
                   <p className="text-[15px] text-neutral-600 dark:text-neutral-300">

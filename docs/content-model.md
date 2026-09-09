@@ -25,13 +25,13 @@ so linked questions resolve in one request. Server-component callers set
 | `type`         | Short text      | yes      | Exactly `pairwise`, `mcq`, or `boolean`. Validate via list.  |
 | `prompt`       | Short text      | yes      | The question headline.                                       |
 | `options`      | Short text, list| yes      | `mcq`: 2+ answers. `boolean`: `True`,`False`. `pairwise`: 2 = single duel (runner), 3+ = versus pool (see below). |
-| `correctIndex` | Integer         | mcq/boolean only | Index into `options`. Omit for `pairwise`.          |
+| `correctIndex` | Integer         | no       | Scored answer index. Omit = opinion gauge, shown unscored. |
 | `explanation`  | Long text       | no       | Shown on results.                                            |
 | `media`        | Media, one file | no       | Optional image. Asset URL used as `mediaUrl`.                |
 
 Parser rules (`src/lib/contentful.ts`): entries missing required fields are
-skipped, not fatal. Invalid `correctIndex` (non-integer, out of range)
-drops that question. `pairwise` needs 2+ options.
+skipped, not fatal. `correctIndex`, when present but invalid, is ignored
+(opinion gauge). `pairwise` needs 2+ options.
 Unresolved links (no `include`) are skipped.
 
 ## Versus quizzes (Elo)
