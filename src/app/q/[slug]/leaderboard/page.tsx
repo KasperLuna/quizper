@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Leaderboard from "~/components/leaderboard";
+import { TestHeader } from "~/components/brand-header";
 
 export default function LeaderboardPage() {
   const params = useParams<{ slug: string }>();
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col gap-6 px-5 py-10">
+      <TestHeader />
       <h1 className="text-[28px] leading-tight font-bold tracking-tight">
         Leaderboard
       </h1>

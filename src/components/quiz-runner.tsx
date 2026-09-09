@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Answer, Quiz } from "~/lib/quiz";
 import { encodeShare } from "~/lib/share";
 import { AnswerRow, ProgressBar } from "~/components/ui";
+import { TestHeader } from "~/components/brand-header";
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -154,6 +155,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
     <div className="flex min-h-dvh flex-col">
       <ProgressBar value={done / total} />
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-5 pt-6 pb-28">
+        <TestHeader />
         <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
           Question {index + 1} of {total}
         </p>
