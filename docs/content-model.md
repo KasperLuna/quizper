@@ -52,16 +52,23 @@ runner is share-payload only, no Elo.
 4. Publish quiz + all linked questions (unpublished links resolve empty).
 5. Verify: open `/q/<slug>` — with `revalidate = 3600` edits appear within the hour.
 
-## Instant updates (webhook → ISR)
+## Instant updates (webhook → cache tags)
 
-Pages prerender at build and revalidate hourly. For instant publishes:
+Contentful loaders are cached (`unstable_cache`, 1h) under tags
+`contentful` / `quiz-list` / `quiz`. The webhook busts tags, not pages:
 
 1. `REVALIDATE_SECRET` is set in `.env` (local) and Vercel production env.
    Generate a fresh one with `openssl rand -hex 32` if needed.
 2. Contentful dashboard → Settings → Webhooks → Add webhook:
    - URL: `https://quizper.kasperluna.com/api/revalidate`
-   - Triggers: Entry → Publish + Unpublish (all content types; the route
-     revalidates `/` always and `/q/<slug>` when the payload carries one)
+   - Triggers: Entry → Publish + Unpublish (all content types)
    - Headers: `x-revalidate-secret: <REVALIDATE_SECRET>` (mark secret)
-3. Test: publish any quiz entry → index + quiz page update within seconds.
+3. Quiz events bust `quiz` + `quiz-list`; question edits (no parent-quiz
+   mapping) bust the broad `contentful` tag. Page shells (`/`, `/q/<slug>`)
+   revalidate by path too; per-page `revalidate = 3600` is the backstop.
+4. Test: publish any entry → site updates within seconds.
    Manual equivalent: `GET /api/revalidate?secret=...&slug=...`.
+
+Live API data is cached separately: `GET /api/leaderboard` carries
+`revalidate = 5` (~5s staleness); matchup/vote/attempts are
+`force-dynamic` and never cache.

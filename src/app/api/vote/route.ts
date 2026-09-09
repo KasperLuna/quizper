@@ -4,6 +4,9 @@ import { z } from "zod";
 
 import { eloDelta } from "~/lib/quiz";
 import { pickMatchup, seedRatingsIfEmpty } from "~/server/quiz-store";
+
+// Writes must never cache.
+export const dynamic = "force-dynamic";
 import { db } from "~/server/db";
 import { candidateRatings, pairwiseVotes } from "~/server/db/schema";
 
