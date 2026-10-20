@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { eloDelta } from "~/lib/quiz";
-import { pickMatchup, seedRatingsIfEmpty } from "~/server/quiz-store";
+import { pickMatchup, ensureRatings } from "~/server/quiz-store";
 
 // Writes must never cache.
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
   // The runner votes by name without ever hitting /api/matchup, so seed
   // here too — otherwise every first vote 404s on an empty ratings table.
-  const seeded = await seedRatingsIfEmpty(quizSlug);
+  const seeded = await ensureRatings(quizSlug);
   if (seeded === null) {
     return NextResponse.json({ error: "unknown quiz" }, { status: 404 });
   }

@@ -1,8 +1,9 @@
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import type { Matchup, Quiz } from "~/lib/quiz";
 import { START_ELO } from "~/lib/quiz";
-import { getQuizWithFallback } from "~/lib/quiz-fallback";
+import { getQuizBySlug } from "~/lib/contentful";
+import { getFallbackQuiz, getQuizWithFallback } from "~/lib/quiz-fallback";
 import { db } from "~/server/db";
 import { candidateRatings } from "~/server/db/schema";
 
@@ -21,20 +22,56 @@ export function pairwiseCandidates(quiz: Quiz): string[] {
   return [...new Set(pool.map((n) => n.trim()).filter(Boolean))];
 }
 
-export async function seedRatingsIfEmpty(
+export async function ensureRatings(
   quizSlug: string,
 ): Promise<{ name: string; elo: number; votes: number }[] | null> {
   const existing = await db
     .select()
     .from(candidateRatings)
     .where(eq(candidateRatings.quizSlug, quizSlug));
-  const quiz = await loadQuizBySlug(quizSlug);
+
+  // Authoritative read: prune only when the quiz really came from Contentful.
+  // On the local fixture fallback we must not delete real candidates.
+  let quiz: Quiz | null = null;
+  let authoritative = false;
+  try {
+    quiz = await getQuizBySlug(quizSlug);
+    authoritative = quiz !== null;
+  } catch {
+    // Contentful unreachable — keep existing rows, seed nothing new.
+  }
+  if (!authoritative) quiz = getFallbackQuiz(quizSlug);
   if (!quiz) return existing.length > 0 ? existing : null;
-  // Reconcile on every call: options added in Contentful must join the pool,
-  // not just the first-seeded batch. (Quiz load is unstable_cache'd.)
+
+  // Reconcile on every call: options added or removed in Contentful must
+  // follow into the pool, not just the first-seeded batch.
+  const names = pairwiseCandidates(quiz);
   const known = new Set(existing.map((r) => r.name));
-  const missing = pairwiseCandidates(quiz).filter((n) => !known.has(n));
-  if (missing.length === 0) return existing;
+  const current = authoritative
+    ? existing.filter((r) => names.includes(r.name))
+    : existing;
+  // Guard: unresolved/empty links (e.g. unpublished question) resolve to zero
+  // names — never treat that as "author deleted every candidate".
+  const stale =
+    authoritative && names.length >= 2
+      ? existing.filter((r) => !names.includes(r.name))
+      : [];
+  const missing = names.filter((n) => !known.has(n));
+
+  if (stale.length > 0) {
+    await db
+      .delete(candidateRatings)
+      .where(
+        and(
+          eq(candidateRatings.quizSlug, quizSlug),
+          inArray(
+            candidateRatings.name,
+            stale.map((r) => r.name),
+          ),
+        ),
+      );
+  }
+  if (missing.length === 0) return current;
   const added = await db
     .insert(candidateRatings)
     .values(
@@ -46,7 +83,7 @@ export async function seedRatingsIfEmpty(
       elo: candidateRatings.elo,
       votes: candidateRatings.votes,
     });
-  return [...existing, ...added];
+  return [...current, ...added];
 }
 
 export interface Rating {

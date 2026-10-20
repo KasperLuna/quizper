@@ -69,6 +69,8 @@ async function invalidate(request: Request) {
   } else {
     // Question edit (no parent-quiz mapping) or unknown payload: bust all.
     revalidateTag("contentful");
+    // Unknown parent slug — revalidate every quiz page shell.
+    revalidatePath("/q/[slug]", "page");
   }
   revalidatePath("/");
   if (slug) revalidatePath(`/q/${slug}`);

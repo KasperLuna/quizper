@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { pickMatchup, seedRatingsIfEmpty } from "~/server/quiz-store";
+import { pickMatchup, ensureRatings } from "~/server/quiz-store";
 
 // Random pairings must never cache.
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "missing ?quiz=slug" }, { status: 400 });
   }
 
-  const ratings = await seedRatingsIfEmpty(quizSlug);
+  const ratings = await ensureRatings(quizSlug);
   if (ratings === null) {
     return NextResponse.json({ error: "unknown quiz" }, { status: 404 });
   }
