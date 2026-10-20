@@ -28,15 +28,25 @@ export async function seedRatingsIfEmpty(
     .select()
     .from(candidateRatings)
     .where(eq(candidateRatings.quizSlug, quizSlug));
-  if (existing.length > 0) return existing;
   const quiz = await loadQuizBySlug(quizSlug);
-  if (!quiz) return null;
-  const names = pairwiseCandidates(quiz);
-  if (names.length === 0) return [];
-  await db.insert(candidateRatings).values(
-    names.map((name) => ({ quizSlug, name, elo: START_ELO, votes: 0 })),
-  );
-  return names.map((name) => ({ name, elo: START_ELO, votes: 0 }));
+  if (!quiz) return existing.length > 0 ? existing : null;
+  // Reconcile on every call: options added in Contentful must join the pool,
+  // not just the first-seeded batch. (Quiz load is unstable_cache'd.)
+  const known = new Set(existing.map((r) => r.name));
+  const missing = pairwiseCandidates(quiz).filter((n) => !known.has(n));
+  if (missing.length === 0) return existing;
+  const added = await db
+    .insert(candidateRatings)
+    .values(
+      missing.map((name) => ({ quizSlug, name, elo: START_ELO, votes: 0 })),
+    )
+    .onConflictDoNothing()
+    .returning({
+      name: candidateRatings.name,
+      elo: candidateRatings.elo,
+      votes: candidateRatings.votes,
+    });
+  return [...existing, ...added];
 }
 
 export interface Rating {
